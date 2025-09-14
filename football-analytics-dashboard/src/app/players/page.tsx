@@ -46,7 +46,7 @@ function parseMarketValueToNumber(value?: string): number {
 }
 
 export default function PlayersPage() {
-  const { players, loading, error } = usePlayerData()
+  const { players, loading, error, totalPlayers, playersWithYouthClub } = usePlayerData()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [countryFilter, setCountryFilter] = useState<string>('')
@@ -237,7 +237,7 @@ export default function PlayersPage() {
               {loading ? (
                 <div className="h-6 w-20 bg-muted animate-pulse rounded" />
               ) : (
-                filteredPlayers.length.toLocaleString()
+                new Set(filteredPlayers.map(p => p.player_id)).size.toLocaleString()
               )}
             </p>
           </CardContent>
@@ -251,9 +251,12 @@ export default function PlayersPage() {
               {loading ? (
                 <div className="h-6 w-20 bg-muted animate-pulse rounded" />
               ) : (
-                filteredPlayers.filter(p => p.youth_club && 
-                  p.youth_club !== 'Not found' && 
-                  !p.youth_club.includes(')')).length.toLocaleString()
+                new Set(filteredPlayers
+                  .filter(p => p.youth_club && 
+                    p.youth_club !== 'Not found' && 
+                    !p.youth_club.includes(')'))
+                  .map(p => p.player_id)
+                ).size.toLocaleString()
               )}
             </p>
           </CardContent>
@@ -342,19 +345,17 @@ export default function PlayersPage() {
                           {formatDate(player.date_of_birth)}
                         </TableCell>
                         <TableCell>
-                          {player.profile_url ? (
-                            <a href={player.profile_url} target="_blank" rel="noopener noreferrer">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors duration-200"
-                              >
-                                View
-                              </Button>
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors duration-200"
+                            onClick={() => {
+                              // TODO: Implementar navegación al perfil del jugador
+                              console.log('View profile for player:', player.player_id)
+                            }}
+                          >
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

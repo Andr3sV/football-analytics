@@ -456,7 +456,7 @@ export default function PredictivePage() {
                 <li>• <strong>youngStars</strong> = jugadores &le;25 años con valor &ge;€1M</li>
                 <li>• <strong>potential</strong> = (youngStars / players) &times; 100</li>
                 <li>• <strong>Filtro:</strong> Solo clubes con mínimo 3 jugadores</li>
-                <li>• <strong>Criterios de "Future Star":</strong> age &le; 25 AND latest_market_value &ge; 1,000,000</li>
+                <li>• <strong>Criterios de &quot;Future Star&quot;:</strong> age &le; 25 AND latest_market_value &ge; 1,000,000</li>
               </ul>
               <p className="text-xs text-muted-foreground mt-2">
                 <strong>Columnas utilizadas:</strong> youth_club, youth_club_cleaned, age, latest_market_value

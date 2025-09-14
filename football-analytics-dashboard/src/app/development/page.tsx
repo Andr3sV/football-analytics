@@ -2,7 +2,7 @@
 
 import { usePlayerData } from '@/hooks/usePlayerData'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, Building2, Users, Globe, BarChart3, Target, Zap } from 'lucide-react'
+import { Building2, Globe, Target, Zap } from 'lucide-react'
 import { useMemo } from 'react'
 
 // Componente para gráfico de barras verticales futurista

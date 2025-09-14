@@ -157,7 +157,7 @@ function MetricCard({
 }
 
 export default function Home() {
-  const { players, loading, error } = usePlayerData()
+  const { players, loading, error, totalPlayers, playersWithYouthClub } = usePlayerData()
 
   // Top 10 clubes con más jugadores únicos
   const topClubs = useMemo(() => {
@@ -175,7 +175,6 @@ export default function Home() {
       }
     })
     
-    const totalPlayers = players.length
     return Array.from(clubCounts.entries())
       .map(([name, value]) => ({
         name: name.length > 25 ? name.substring(0, 25) + '...' : name,
@@ -184,7 +183,7 @@ export default function Home() {
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10)
-  }, [players])
+  }, [players, totalPlayers])
 
   // Top 10 países con más jugadores únicos
   const topCountries = useMemo(() => {
@@ -200,7 +199,6 @@ export default function Home() {
       }
     })
     
-    const totalPlayers = players.length
     return Array.from(countryCounts.entries())
       .map(([name, value]) => ({
         name: name.length > 20 ? name.substring(0, 20) + '...' : name,
@@ -209,7 +207,7 @@ export default function Home() {
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10)
-  }, [players])
+  }, [players, totalPlayers])
 
   if (error) {
     return (
@@ -246,7 +244,7 @@ export default function Home() {
                 {loading ? (
                   <div className="h-6 w-20 bg-muted animate-pulse rounded" />
                 ) : (
-                  players.length.toLocaleString()
+                  totalPlayers.toLocaleString()
                 )}
               </p>
             </div>
@@ -294,7 +292,7 @@ export default function Home() {
                 {loading ? (
                   <div className="h-6 w-20 bg-muted animate-pulse rounded" />
                 ) : (
-                  `${((players.filter(p => p.youth_club && p.youth_club !== 'Not found').length / players.length) * 100).toFixed(1)}%`
+                  `${((playersWithYouthClub / totalPlayers) * 100).toFixed(1)}%`
                 )}
               </p>
             </div>

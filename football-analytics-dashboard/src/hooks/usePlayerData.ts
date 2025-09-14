@@ -127,7 +127,7 @@ export function usePlayerData(): UsePlayerDataReturn {
             setPlayers(validPlayers)
             setLoading(false)
           },
-          error: (error) => {
+          error: (error: unknown) => {
             console.error('CSV parsing error:', error)
             setError('Failed to parse CSV data')
             setLoading(false)
