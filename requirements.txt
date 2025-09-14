@@ -1,0 +1,8 @@
+Scrapy==2.11.1
+itemloaders==1.1.0
+parsel==1.9.1
+w3lib==2.2.1
+python-dateutil==2.9.0.post0
+beautifulsoup4==4.12.3
+tenacity==9.0.0
+fake-useragent==1.5.1

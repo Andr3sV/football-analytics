@@ -1,0 +1,21 @@
+[
+	{"code": "ES1", "name": "LaLiga"},
+	{"code": "PO1", "name": "Liga Portugal"},
+	{"code": "FR1", "name": "Ligue 1"},
+	{"code": "L1", "name": "Bundesliga"},
+	{"code": "SE1", "name": "Allsvenskan"},
+	{"code": "BE1", "name": "Pro League"},
+	{"code": "PL1", "name": "Ekstraklasa"},
+	{"code": "KOR1", "name": "K League 1"},
+	{"code": "SA1", "name": "Saudi Pro League"},
+	{"code": "QA1", "name": "Stars League"},
+	{"code": "IT1", "name": "Serie A"},
+	{"code": "TS1", "name": "Fortuna Liga"},
+	{"code": "NO1", "name": "Eliteserien"},
+	{"code": "GB1", "name": "Premier League"},
+	{"code": "SC1", "name": "Premiership"},
+	{"code": "BRA1", "name": "Serie A (Brazil)"},
+	{"code": "COL1", "name": "Categoria Primera A"},
+	{"code": "SW1", "name": "Super League (Switzerland)"},
+	{"code": "TR1", "name": "Super Lig"}
+]
