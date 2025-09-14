@@ -21,6 +21,61 @@ export interface Player {
   youth_club_cleaned: string
 }
 
+function normalizeCountryName(country: string): string {
+  if (!country || country.trim() === '' || country === 'Not found') {
+    return country
+  }
+  
+  const normalized = country.trim()
+  
+  // Common country name normalizations
+  const countryMappings: Record<string, string> = {
+    'brasil': 'Brazil',
+    'BRASIL': 'Brazil',
+    'Brasil': 'Brazil',
+    'usa': 'United States',
+    'USA': 'United States',
+    'united states of america': 'United States',
+    'us': 'United States',
+    'uk': 'United Kingdom',
+    'UK': 'United Kingdom',
+    'great britain': 'United Kingdom',
+    'england': 'England',
+    'scotland': 'Scotland',
+    'wales': 'Wales',
+    'northern ireland': 'Northern Ireland',
+    'korea south': 'South Korea',
+    'korea, south': 'South Korea',
+    'south korea': 'South Korea',
+    'korea north': 'North Korea',
+    'korea, north': 'North Korea',
+    'north korea': 'North Korea',
+    'bosnia-herzegovina': 'Bosnia and Herzegovina',
+    'bosnia & herzegovina': 'Bosnia and Herzegovina',
+    'czech republic': 'Czech Republic',
+    'czechia': 'Czech Republic',
+    'russian federation': 'Russia',
+    'russian fed.': 'Russia',
+    'congo dr': 'Democratic Republic of the Congo',
+    'congo, dr': 'Democratic Republic of the Congo',
+    'dr congo': 'Democratic Republic of the Congo',
+    'ivory coast': 'Côte d\'Ivoire',
+    'cape verde': 'Cape Verde',
+    'cape verde islands': 'Cape Verde'
+  }
+  
+  // Check exact matches first (case insensitive)
+  const lowerNormalized = normalized.toLowerCase()
+  for (const [key, value] of Object.entries(countryMappings)) {
+    if (lowerNormalized === key.toLowerCase()) {
+      return value
+    }
+  }
+  
+  // Return the original with proper casing (first letter uppercase)
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase()
+}
+
 interface UsePlayerDataReturn {
   players: Player[]
   loading: boolean
@@ -57,12 +112,17 @@ export function usePlayerData(): UsePlayerDataReturn {
             
             const processedData = results.data as Player[]
             
-            // Filter out invalid or incomplete rows
-            const validPlayers = processedData.filter(player => 
-              player.player_id && 
-              player.full_name && 
-              player.full_name.trim() !== ''
-            )
+            // Filter out invalid or incomplete rows and normalize country names
+            const validPlayers = processedData
+              .filter(player => 
+                player.player_id && 
+                player.full_name && 
+                player.full_name.trim() !== ''
+              )
+              .map(player => ({
+                ...player,
+                youth_club_country: normalizeCountryName(player.youth_club_country)
+              }))
             
             setPlayers(validPlayers)
             setLoading(false)

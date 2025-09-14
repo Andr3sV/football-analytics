@@ -4,7 +4,10 @@ import { useState, useMemo } from 'react'
 import { usePlayerData } from '@/hooks/usePlayerData'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 import {
   Table,
   TableBody,
@@ -21,27 +24,56 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react'
+import { getFlagEmojiByCountryName } from '@/lib/flags'
 
 const ITEMS_PER_PAGE = 20
+
+function parseMarketValueToNumber(value?: string): number {
+  if (!value) return 0
+  // Remove currency symbols and thousand separators
+  const cleaned = value.replace(/[€$,\s]/g, '').trim()
+  // Match formats like 18m, 18.5m, 150000, 150k
+  const match = cleaned.match(/^([0-9]+(?:\.[0-9]+)?)([mMkK])?$/)
+  if (!match) {
+    const n = Number(cleaned.replace(/,/g, ''))
+    return isNaN(n) ? 0 : n
+  }
+  const num = parseFloat(match[1])
+  const suffix = match[2]?.toLowerCase()
+  if (suffix === 'm') return num * 1_000_000
+  if (suffix === 'k') return num * 1_000
+  return isNaN(num) ? 0 : num
+}
 
 export default function PlayersPage() {
   const { players, loading, error } = usePlayerData()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
-  const [positionFilter, setPositionFilter] = useState<string>('')
+  const [countryFilter, setCountryFilter] = useState<string>('')
+  const [competitionFilter, setCompetitionFilter] = useState<string>('')
+  const [minMarketValue, setMinMarketValue] = useState<number>(0)
 
-  // Filter and search players
+  // Filter and search players with indexed data
+  const indexedPlayers = useMemo(() => {
+    return players.map((player, index) => ({ ...player, originalIndex: index }))
+  }, [players])
+
   const filteredPlayers = useMemo(() => {
-    return players.filter(player => {
-      const matchesSearch = player.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           player.current_club.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           player.youth_club?.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      const matchesPosition = !positionFilter || player.position === positionFilter
-      
-      return matchesSearch && matchesPosition
+    const term = searchTerm.toLowerCase()
+    return indexedPlayers.filter(player => {
+      const matchesSearch = player.full_name.toLowerCase().includes(term) ||
+        player.current_club.toLowerCase().includes(term) ||
+        (player.youth_club?.toLowerCase() || '').includes(term)
+
+      const matchesCountry = !countryFilter || (player.youth_club_country === countryFilter)
+
+      const matchesCompetition = !competitionFilter || (player.competition === competitionFilter)
+
+      const meetsMinValue = parseMarketValueToNumber(player.latest_market_value) >= minMarketValue
+
+      return matchesSearch && matchesCountry && matchesCompetition && meetsMinValue
     })
-  }, [players, searchTerm, positionFilter])
+  }, [indexedPlayers, searchTerm, countryFilter, competitionFilter, minMarketValue])
 
   // Pagination
   const totalPages = Math.ceil(filteredPlayers.length / ITEMS_PER_PAGE)
@@ -49,13 +81,25 @@ export default function PlayersPage() {
   const endIndex = startIndex + ITEMS_PER_PAGE
   const currentPlayers = filteredPlayers.slice(startIndex, endIndex)
 
-  // Get unique positions for filter
-  const uniquePositions = useMemo(() => {
-    const positions = players
-      .map(player => player.position)
-      .filter(position => position && position.trim() !== '')
-    return Array.from(new Set(positions)).sort()
-  }, [players])
+  // Unique countries for filter (youth club country)
+  const uniqueCountries = useMemo(() => {
+    const countries = indexedPlayers
+      .map(p => p.youth_club_country)
+      .filter(c => c && c !== 'Not found' && c.trim() !== '') as string[]
+    return Array.from(new Set(countries)).sort((a, b) => a.localeCompare(b))
+  }, [indexedPlayers])
+
+  // Unique competitions for filter
+  const uniqueCompetitions = useMemo(() => {
+    const competitions = indexedPlayers
+      .map(p => p.competition)
+      .filter(c => c && c.trim() !== '') as string[]
+    return Array.from(new Set(competitions)).sort((a, b) => a.localeCompare(b))
+  }, [indexedPlayers])
+
+  const maxMarketValue = useMemo(() => {
+    return indexedPlayers.reduce((max, p) => Math.max(max, parseMarketValueToNumber(p.latest_market_value)), 0)
+  }, [indexedPlayers])
 
   const formatMarketValue = (value: string) => {
     if (!value || value === 'Not found') return 'N/A'
@@ -97,7 +141,7 @@ export default function PlayersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -129,63 +173,109 @@ export default function PlayersPage() {
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-sm font-medium">Unique Positions</p>
-                <p className="text-2xl font-bold">
-                  {loading ? '...' : uniquePositions.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">
-            Search & Filter
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold">Search & Filter</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-12">
+            {/* Search */}
+            <div className="flex flex-col gap-2 lg:col-span-4">
+              <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search"
                   placeholder="Search players, clubs, or youth clubs..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value)
                     setCurrentPage(1)
                   }}
-                  className="w-full pl-10 pr-4 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="pl-10 w-full"
                 />
               </div>
             </div>
-            
-            <div className="min-w-[200px]">
-              <select
-                value={positionFilter}
-                onChange={(e) => {
-                  setPositionFilter(e.target.value)
+
+            {/* Country filter */}
+            <div className="flex flex-col gap-2 lg:col-span-2">
+              <Label>Country</Label>
+              <Select
+                value={countryFilter || 'ALL'}
+                onValueChange={(val) => {
+                  setCountryFilter(val === 'ALL' ? '' : val)
                   setCurrentPage(1)
                 }}
-                className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="">All Positions</option>
-                {uniquePositions.map(position => (
-                  <option key={position} value={position}>
-                    {position}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All countries" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="ALL">All countries</SelectItem>
+                  {uniqueCountries.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {getFlagEmojiByCountryName(c)} {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Competition filter */}
+            <div className="flex flex-col gap-2 lg:col-span-2">
+              <Label>Competition</Label>
+              <Select
+                value={competitionFilter || 'ALL'}
+                onValueChange={(val) => {
+                  setCompetitionFilter(val === 'ALL' ? '' : val)
+                  setCurrentPage(1)
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All competitions" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="ALL">All competitions</SelectItem>
+                  {uniqueCompetitions.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Min market value */}
+            <div className="flex flex-col gap-2 lg:col-span-4">
+              <Label>Min Market Value (€)</Label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <Slider
+                    value={[minMarketValue]}
+                    onValueChange={(v) => {
+                      setMinMarketValue(v[0] ?? 0)
+                      setCurrentPage(1)
+                    }}
+                    min={0}
+                    max={Math.max(1_000_000, Math.ceil(maxMarketValue / 1_000_000) * 1_000_000)}
+                    step={100_000}
+                    className="w-full"
+                  />
+                </div>
+                <Input
+                  type="number"
+                  value={minMarketValue}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    setMinMarketValue(isNaN(v) ? 0 : v)
+                    setCurrentPage(1)
+                  }}
+                  className="w-24"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -211,18 +301,46 @@ export default function PlayersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Training Club</TableHead>
                       <TableHead>Player</TableHead>
-                      <TableHead>Position</TableHead>
                       <TableHead>Current Club</TableHead>
-                      <TableHead>Youth Club</TableHead>
-                      <TableHead>Country</TableHead>
                       <TableHead>Market Value</TableHead>
-                      <TableHead>Age</TableHead>
+                      <TableHead>Date of Birth</TableHead>
+                      <TableHead>Profile</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {currentPlayers.map((player) => (
-                      <TableRow key={player.player_id} className="hover:bg-muted/50">
+                      <TableRow key={player.originalIndex} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div className="max-w-[200px]">
+                            {player.youth_club && 
+                             player.youth_club !== 'Not found' && 
+                             !player.youth_club.includes(')') ? (
+                              <div>
+                                <div className="font-medium truncate">
+                                  {player.youth_club_cleaned || player.youth_club}
+                                </div>
+                                {player.youth_club_country && 
+                                 player.youth_club_country !== 'Not found' ? (
+                                  <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                    <span className="text-base">
+                                      {getFlagEmojiByCountryName(player.youth_club_country)}
+                                    </span>
+                                    <span className="truncate" title={player.youth_club_country}>
+                                      {player.youth_club_country.length > 15 
+                                        ? player.youth_club_country.substring(0, 15) + '...'
+                                        : player.youth_club_country
+                                      }
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">N/A</span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium text-foreground">
@@ -234,15 +352,6 @@ export default function PlayersPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {player.position ? (
-                            <Badge variant="secondary" className="text-xs">
-                              {player.position}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
                           <div className="font-medium">
                             {player.current_club || 'N/A'}
                           </div>
@@ -251,35 +360,27 @@ export default function PlayersPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="max-w-[200px]">
-                            {player.youth_club && 
-                             player.youth_club !== 'Not found' && 
-                             !player.youth_club.includes(')') ? (
-                              <div className="font-medium truncate">
-                                {player.youth_club_cleaned || player.youth_club}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">N/A</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {player.youth_club_country && 
-                           player.youth_club_country !== 'Not found' ? (
-                            <span className="text-sm">
-                              {player.youth_club_country}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
                           <span className="font-medium">
                             {formatMarketValue(player.latest_market_value)}
                           </span>
                         </TableCell>
                         <TableCell>
-                          {player.age || 'N/A'}
+                          {formatDate(player.date_of_birth)}
+                        </TableCell>
+                        <TableCell>
+                          {player.profile_url ? (
+                            <a href={player.profile_url} target="_blank" rel="noopener noreferrer">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors duration-200"
+                              >
+                                View
+                              </Button>
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">N/A</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
