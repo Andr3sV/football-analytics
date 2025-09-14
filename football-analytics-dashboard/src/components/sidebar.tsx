@@ -9,10 +9,15 @@ import {
   ChevronLeft, 
   ChevronRight,
   Activity,
-  BarChart3
+  BarChart3,
+  Target,
+  Globe,
+  Zap,
+  TrendingUp
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { PrimePlayersLogo } from './logo'
 
 interface SidebarProps {
   className?: string
@@ -25,19 +30,29 @@ const navigation = [
     icon: Home,
   },
   {
-    name: 'Players',
+    name: 'Training Club and Players',
     href: '/players',
     icon: Users,
   },
   {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: BarChart3,
+    name: 'Development Analysis',
+    href: '/development',
+    icon: Target,
   },
   {
-    name: 'Performance',
+    name: 'Geographic Analysis',
+    href: '/geographic',
+    icon: Globe,
+  },
+  {
+    name: 'Performance Metrics',
     href: '/performance',
-    icon: Activity,
+    icon: Zap,
+  },
+  {
+    name: 'Predictive Analytics',
+    href: '/predictive',
+    icon: TrendingUp,
   },
 ]
 
@@ -57,15 +72,15 @@ export function Sidebar({ className }: SidebarProps) {
           "flex items-center gap-3 overflow-hidden transition-all duration-300",
           collapsed && "opacity-0"
         )}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Activity className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg">
+            <PrimePlayersLogo className="h-6 w-6" />
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-sidebar-foreground">
-              Football Analytics
+              Prime Players
             </span>
             <span className="text-xs text-muted-foreground">
-              Dashboard
+              Football Analytics Center
             </span>
           </div>
         </div>

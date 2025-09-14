@@ -144,13 +144,19 @@ export function usePlayerData(): UsePlayerDataReturn {
   }, [])
 
   // Calculate metrics
-  const totalPlayers = players.length
-  const playersWithYouthClub = players.filter(player => 
-    player.youth_club && 
-    player.youth_club.trim() !== '' && 
-    player.youth_club !== 'Not found' &&
-    !player.youth_club.includes(')')
-  ).length
+  const uniquePlayerIds = new Set(players.map(player => player.player_id))
+  const totalPlayers = uniquePlayerIds.size
+  
+  const playersWithYouthClub = new Set(
+    players
+      .filter(player => 
+        player.youth_club && 
+        player.youth_club.trim() !== '' && 
+        player.youth_club !== 'Not found' &&
+        !player.youth_club.includes(')')
+      )
+      .map(player => player.player_id)
+  ).size
 
   const marketValueSum = players.reduce((sum, player) => {
     if (!player.latest_market_value) return sum

@@ -130,61 +130,11 @@ export default function PlayersPage() {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Players Database
-        </h1>
-        <p className="text-muted-foreground">
-          Comprehensive player information with youth development history
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Total Players</p>
-                <p className="text-2xl font-bold">
-                  {loading ? '...' : filteredPlayers.length.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4 text-green-500" />
-              <div>
-                <p className="text-sm font-medium">With Youth Clubs</p>
-                <p className="text-2xl font-bold">
-                  {loading ? '...' : 
-                    filteredPlayers.filter(p => p.youth_club && 
-                      p.youth_club !== 'Not found' && 
-                      !p.youth_club.includes(')')).length.toLocaleString()
-                  }
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Filters */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Search & Filter</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-12">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-12 mb-6">
             {/* Search */}
             <div className="flex flex-col gap-2 lg:col-span-4">
-              <Label htmlFor="search">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -202,7 +152,6 @@ export default function PlayersPage() {
 
             {/* Country filter */}
             <div className="flex flex-col gap-2 lg:col-span-2">
-              <Label>Country</Label>
               <Select
                 value={countryFilter || 'ALL'}
                 onValueChange={(val) => {
@@ -226,7 +175,6 @@ export default function PlayersPage() {
 
             {/* Competition filter */}
             <div className="flex flex-col gap-2 lg:col-span-2">
-              <Label>Competition</Label>
               <Select
                 value={competitionFilter || 'ALL'}
                 onValueChange={(val) => {
@@ -250,8 +198,18 @@ export default function PlayersPage() {
 
             {/* Min market value */}
             <div className="flex flex-col gap-2 lg:col-span-4">
-              <Label>Min Market Value (€)</Label>
               <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  placeholder="Min Market Value (€)"
+                  value={minMarketValue === 0 ? '' : minMarketValue}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    setMinMarketValue(isNaN(v) ? 0 : v)
+                    setCurrentPage(1)
+                  }}
+                  className="w-48"
+                />
                 <div className="flex-1">
                   <Slider
                     value={[minMarketValue]}
@@ -265,30 +223,46 @@ export default function PlayersPage() {
                     className="w-full"
                   />
                 </div>
-                <Input
-                  type="number"
-                  value={minMarketValue}
-                  onChange={(e) => {
-                    const v = Number(e.target.value)
-                    setMinMarketValue(isNaN(v) ? 0 : v)
-                    setCurrentPage(1)
-                  }}
-                  className="w-24"
-                />
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="bg-card border-border hover:bg-card/80 transition-colors">
+          <CardContent className="px-6 py-1 flex items-center gap-3">
+            <Users className="flex-shrink-0 h-5 w-5 text-primary" />
+            <p className="text-sm font-medium text-muted-foreground">Total Players</p>
+            <p className="text-lg font-bold text-foreground ml-auto">
+              {loading ? (
+                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+              ) : (
+                filteredPlayers.length.toLocaleString()
+              )}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card border-border hover:bg-card/80 transition-colors">
+          <CardContent className="px-6 py-1 flex items-center gap-3">
+            <TrendingUp className="flex-shrink-0 h-5 w-5 text-green-500" />
+            <p className="text-sm font-medium text-muted-foreground">With Youth Clubs</p>
+            <p className="text-lg font-bold text-foreground ml-auto">
+              {loading ? (
+                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+              ) : (
+                filteredPlayers.filter(p => p.youth_club && 
+                  p.youth_club !== 'Not found' && 
+                  !p.youth_club.includes(')')).length.toLocaleString()
+              )}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Players Table */}
       <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">
-            Players ({filteredPlayers.length.toLocaleString()})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 10 }).map((_, i) => (
