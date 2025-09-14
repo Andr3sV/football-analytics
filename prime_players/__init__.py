@@ -1,1 +1,0 @@
-# Prime Players Scrapy project
