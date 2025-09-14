@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import {
   Table,
@@ -49,9 +50,32 @@ export default function PlayersPage() {
   const { players, loading, error, totalPlayers, playersWithYouthClub } = usePlayerData()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
-  const [countryFilter, setCountryFilter] = useState<string>('')
-  const [competitionFilter, setCompetitionFilter] = useState<string>('')
+  const [countryFilter, setCountryFilter] = useState<string[]>([])
+  const [competitionFilter, setCompetitionFilter] = useState<string[]>([])
   const [minMarketValue, setMinMarketValue] = useState<number>(0)
+
+  // Handle multiple selection
+  const handleCountryToggle = (country: string) => {
+    setCountryFilter(prev => 
+      prev.includes(country) 
+        ? prev.filter(c => c !== country)
+        : [...prev, country]
+    )
+  }
+
+  const handleCompetitionToggle = (competition: string) => {
+    setCompetitionFilter(prev => 
+      prev.includes(competition) 
+        ? prev.filter(c => c !== competition)
+        : [...prev, competition]
+    )
+  }
+
+  const clearAllFilters = () => {
+    setCountryFilter([])
+    setCompetitionFilter([])
+    setMinMarketValue(0)
+  }
 
   // Filter and search players with indexed data
   const indexedPlayers = useMemo(() => {
@@ -65,9 +89,9 @@ export default function PlayersPage() {
         player.current_club.toLowerCase().includes(term) ||
         (player.youth_club?.toLowerCase() || '').includes(term)
 
-      const matchesCountry = !countryFilter || (player.youth_club_country === countryFilter)
+      const matchesCountry = countryFilter.length === 0 || countryFilter.includes(player.youth_club_country)
 
-      const matchesCompetition = !competitionFilter || (player.competition === competitionFilter)
+      const matchesCompetition = competitionFilter.length === 0 || competitionFilter.includes(player.competition)
 
       const meetsMinValue = parseMarketValueToNumber(player.latest_market_value) >= minMarketValue
 
@@ -152,52 +176,102 @@ export default function PlayersPage() {
 
             {/* Country filter */}
             <div className="flex flex-col gap-2 lg:col-span-2">
-              <Select
-                value={countryFilter || 'ALL'}
-                onValueChange={(val) => {
-                  setCountryFilter(val === 'ALL' ? '' : val)
-                  setCurrentPage(1)
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All countries" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  <SelectItem value="ALL">All countries</SelectItem>
-                  {uniqueCountries.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {getFlagEmojiByCountryName(c)} {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={`Countries ${countryFilter.length > 0 ? `(${countryFilter.length})` : ''}`} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <div className="p-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Select Countries</span>
+                        {countryFilter.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCountryFilter([])}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Clear all
+                          </Button>
+                        )}
+                      </div>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {uniqueCountries.map((c) => (
+                          <div key={c} className="flex items-center space-x-2 p-1 hover:bg-muted rounded">
+                            <Checkbox
+                              id={`country-${c}`}
+                              checked={countryFilter.includes(c)}
+                              onCheckedChange={() => {
+                                handleCountryToggle(c)
+                                setCurrentPage(1)
+                              }}
+                            />
+                            <label
+                              htmlFor={`country-${c}`}
+                              className="text-sm cursor-pointer flex items-center gap-2 flex-1"
+                            >
+                              {getFlagEmojiByCountryName(c)} {c}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Competition filter */}
             <div className="flex flex-col gap-2 lg:col-span-2">
-              <Select
-                value={competitionFilter || 'ALL'}
-                onValueChange={(val) => {
-                  setCompetitionFilter(val === 'ALL' ? '' : val)
-                  setCurrentPage(1)
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All competitions" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  <SelectItem value="ALL">All competitions</SelectItem>
-                  {uniqueCompetitions.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={`Competitions ${competitionFilter.length > 0 ? `(${competitionFilter.length})` : ''}`} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <div className="p-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Select Competitions</span>
+                        {competitionFilter.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCompetitionFilter([])}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Clear all
+                          </Button>
+                        )}
+                      </div>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {uniqueCompetitions.map((c) => (
+                          <div key={c} className="flex items-center space-x-2 p-1 hover:bg-muted rounded">
+                            <Checkbox
+                              id={`competition-${c}`}
+                              checked={competitionFilter.includes(c)}
+                              onCheckedChange={() => {
+                                handleCompetitionToggle(c)
+                                setCurrentPage(1)
+                              }}
+                            />
+                            <label
+                              htmlFor={`competition-${c}`}
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {c}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {/* Min market value */}
-            <div className="flex flex-col gap-2 lg:col-span-4">
+            {/* Min market value and Clear button */}
+            <div className="flex flex-col gap-2 lg:col-span-3">
               <div className="flex items-center gap-3">
                 <Input
                   type="number"
@@ -208,21 +282,25 @@ export default function PlayersPage() {
                     setMinMarketValue(isNaN(v) ? 0 : v)
                     setCurrentPage(1)
                   }}
-                  className="w-48"
+                  className={
+                    (countryFilter.length > 0 || competitionFilter.length > 0 || minMarketValue > 0) 
+                      ? "w-64" 
+                      : "w-48"
+                  }
                 />
-                <div className="flex-1">
-                  <Slider
-                    value={[minMarketValue]}
-                    onValueChange={(v) => {
-                      setMinMarketValue(v[0] ?? 0)
-                      setCurrentPage(1)
+                {(countryFilter.length > 0 || competitionFilter.length > 0 || minMarketValue > 0) && (
+                  <Button
+                    onClick={clearAllFilters}
+                    className="text-xs h-10 w-26"
+                    style={{ 
+                      backgroundColor: '#667DFF', 
+                      color: 'white',
+                      border: 'none'
                     }}
-                    min={0}
-                    max={Math.max(1_000_000, Math.ceil(maxMarketValue / 1_000_000) * 1_000_000)}
-                    step={100_000}
-                    className="w-full"
-                  />
-                </div>
+                  >
+                    Clear all filters
+                  </Button>
+                )}
               </div>
             </div>
           </div>
