@@ -53,6 +53,7 @@ export default function PlayersPage() {
   const [countryFilter, setCountryFilter] = useState<string[]>([])
   const [competitionFilter, setCompetitionFilter] = useState<string[]>([])
   const [minMarketValue, setMinMarketValue] = useState<number>(0)
+  const [bornFromYear, setBornFromYear] = useState<number>(0)
 
   // Handle multiple selection
   const handleCountryToggle = (country: string) => {
@@ -75,6 +76,7 @@ export default function PlayersPage() {
     setCountryFilter([])
     setCompetitionFilter([])
     setMinMarketValue(0)
+    setBornFromYear(0)
   }
 
   // Filter and search players with indexed data
@@ -95,9 +97,19 @@ export default function PlayersPage() {
 
       const meetsMinValue = parseMarketValueToNumber(player.latest_market_value) >= minMarketValue
 
-      return matchesSearch && matchesCountry && matchesCompetition && meetsMinValue
+      const meetsBornFromYear = bornFromYear === 0 || (() => {
+        if (!player.date_of_birth) return false
+        try {
+          const birthYear = new Date(player.date_of_birth).getFullYear()
+          return birthYear >= bornFromYear
+        } catch {
+          return false
+        }
+      })()
+
+      return matchesSearch && matchesCountry && matchesCompetition && meetsMinValue && meetsBornFromYear
     })
-  }, [indexedPlayers, searchTerm, countryFilter, competitionFilter, minMarketValue])
+  }, [indexedPlayers, searchTerm, countryFilter, competitionFilter, minMarketValue, bornFromYear])
 
   // Pagination
   const totalPages = Math.ceil(filteredPlayers.length / ITEMS_PER_PAGE)
@@ -270,8 +282,8 @@ export default function PlayersPage() {
               </div>
             </div>
 
-            {/* Min market value and Clear button */}
-            <div className="flex flex-col gap-2 lg:col-span-3">
+            {/* Min market value, Born from, and Clear button */}
+            <div className="flex flex-col gap-2 lg:col-span-4">
               <div className="flex items-center gap-3">
                 <Input
                   type="number"
@@ -282,13 +294,20 @@ export default function PlayersPage() {
                     setMinMarketValue(isNaN(v) ? 0 : v)
                     setCurrentPage(1)
                   }}
-                  className={
-                    (countryFilter.length > 0 || competitionFilter.length > 0 || minMarketValue > 0) 
-                      ? "w-64" 
-                      : "w-48"
-                  }
+                  className="w-40"
                 />
-                {(countryFilter.length > 0 || competitionFilter.length > 0 || minMarketValue > 0) && (
+                <Input
+                  type="number"
+                  placeholder="Born from (year)"
+                  value={bornFromYear === 0 ? '' : bornFromYear}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    setBornFromYear(isNaN(v) ? 0 : v)
+                    setCurrentPage(1)
+                  }}
+                  className="w-40"
+                />
+                {(countryFilter.length > 0 || competitionFilter.length > 0 || minMarketValue > 0 || bornFromYear > 0) && (
                   <Button
                     onClick={clearAllFilters}
                     className="text-xs h-10 w-26"
